@@ -80,7 +80,7 @@ jobs:
           path: ${{ runner.temp }}/verification-bundle
           digest-mismatch: error
       - name: Attest verified release bytes
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: ${{ runner.temp }}/verification-bundle/release/*
       - name: Verify the draft assets and publish
