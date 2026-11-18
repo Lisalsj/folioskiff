@@ -42,23 +42,23 @@
   },
   "dependencies": {
     "@phosphor-icons/vue": "^2.2.1",
-    "pdfjs-dist": "^6.2.108",
-    "pinia": "^4.0.2",
-    "reka-ui": "^2.5.0",
-    "vue": "^3.5.43",
-    "vue-router": "^5.2.0"
+    "pdfjs-dist": "^6.5.438",
+    "pinia": "^4.1.0",
+    "reka-ui": "^2.11.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.5.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.0",
-    "@playwright/test": "^1.62.1",
-    "@types/node": "^24.13.3",
-    "@vitejs/plugin-vue": "^6.0.8",
-    "@vue/test-utils": "^2.4.6",
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^24.19.2",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vue/test-utils": "^2.6.0",
     "jsdom": "^27.4.0",
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.3",
     "vite": "^8.3.8",
-    "vitest": "4.1.12",
+    "vitest": "5.1.0",
     "vue-tsc": "^3.3.14"
   },
   "engines": {
