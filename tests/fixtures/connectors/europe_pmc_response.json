@@ -1,0 +1,55 @@
+{
+  "version": "6.9",
+  "hitCount": 3,
+  "request": {
+    "queryString": "agent AND UPDATE_DATE:[2026-06-01 TO 2026-07-31]",
+    "resultType": "core",
+    "cursorMark": "*",
+    "pageSize": 2,
+    "sort": "UPDATE_DATE desc"
+  },
+  "nextCursorMark": "AoIIP4rKpCg1NTY0",
+  "resultList": {
+    "result": [
+      {
+        "id": "12345678",
+        "source": "MED",
+        "pmid": "12345678",
+        "pmcid": "PMC9990001",
+        "doi": "10.1000/cancer.agent.1",
+        "title": "Clinical Agents for Cancer Imaging",
+        "abstractText": "An AI agent supports cancer imaging review.",
+        "authorList": {
+          "author": [
+            {"fullName": "Alice Researcher"},
+            {"fullName": "Chen Li"}
+          ]
+        },
+        "firstPublicationDate": "2026-06-12",
+        "dateOfRevision": "2026-07-08",
+        "firstIndexDate": "2026-06-20",
+        "isOpenAccess": "Y",
+        "fullTextUrlList": {
+          "fullTextUrl": [
+            {
+              "availability": "Open access",
+              "documentStyle": "pdf",
+              "url": "https://europepmc.org/articles/PMC9990001/bin/paper.pdf"
+            }
+          ]
+        }
+      },
+      {
+        "id": "PPR999001",
+        "source": "PPR",
+        "doi": "10.1000/preprint.agent.2",
+        "title": "Agent Assistance in Oncology",
+        "abstractText": "A preprint about oncology agents.",
+        "authorString": "Bob Scientist; Dana Researcher",
+        "firstPublicationDate": "2026-07-01",
+        "dateOfRevision": "2026-07-09",
+        "isOpenAccess": "N"
+      }
+    ]
+  }
+}

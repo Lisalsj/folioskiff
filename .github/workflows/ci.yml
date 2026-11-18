@@ -1,0 +1,186 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    name: Python tests / Windows (${{ matrix.shard }})
+    runs-on: windows-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: domain
+            paths: tests/platform tests/foundation tests/discovery tests/translations tests/assistant
+            resource_serial: false
+          - shard: product
+            paths: tests/agents tests/onboarding tests/packaging tests/performance tests/rc tests/reader tests/recommendation tests/related_resources tests/security
+            resource_serial: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.8"
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: |
+          uv sync --locked --extra dev --extra models --extra ocr --extra packaging
+          npm ci
+      - name: Verify release metadata
+        if: matrix.shard == 'domain'
+        run: uv run python scripts/check_version.py
+      - name: Audit locked dependencies and source security
+        if: matrix.shard == 'domain'
+        run: npm run audit:security
+      - name: Build packaged SPA required by backend tests
+        run: npm run build
+      - name: Lint
+        if: matrix.shard == 'domain'
+        run: uv run ruff check src tests scripts examples
+      - name: Type check
+        if: matrix.shard == 'domain'
+        run: uv run python -m mypy src scripts
+      - name: Verify Windows release workflow contracts
+        if: matrix.shard == 'domain'
+        run: >-
+          uv run pytest
+          tests/packaging/test_windows_release_workflow.py
+          tests/packaging/test_clean_smoke_contract.py
+      - name: Test parallel-safe suite with coverage
+        run: |
+          New-Item -ItemType Directory -Force -Path .tmp | Out-Null
+          $env:COVERAGE_FILE = ".coverage.${{ matrix.shard }}"
+          uv run pytest -n 2 --dist=loadscope -m "not resource_serial" ${{ matrix.paths }} --basetemp=.tmp/p --cov=paper_reader --cov-branch --cov-report= --cov-fail-under=0 --durations=25
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test resource-sensitive Windows contracts
+        if: matrix.resource_serial
+        run: |
+          $env:COVERAGE_FILE = ".coverage.${{ matrix.shard }}"
+          uv run pytest -m resource_serial tests/packaging tests/reader --basetemp=.tmp/s --cov=paper_reader --cov-branch --cov-append --cov-report= --cov-fail-under=0 --durations=25
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify OpenAPI snapshot
+        if: matrix.shard == 'domain'
+        run: |
+          uv run python -m paper_reader.openapi --output openapi/openapi.json
+          git diff --exit-code -- openapi/openapi.json
+      - name: Verify optional sqlite-vec runtime contract
+        if: matrix.shard == 'domain'
+        run: uv run pytest tests/recommendation/test_semantic_search.py -m models
+      - name: Upload Python coverage shard
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-coverage-${{ matrix.shard }}
+          path: .coverage.${{ matrix.shard }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  backend:
+    name: Python 3.12 / Windows
+    needs: python-tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.8"
+          enable-cache: true
+      - name: Install locked coverage tools
+        run: uv sync --locked --extra dev
+      - name: Download Python coverage shards
+        uses: actions/download-artifact@v8
+        with:
+          pattern: python-coverage-*
+          path: coverage-data
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Combine and verify coverage
+        run: |
+          uv run coverage combine coverage-data
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run coverage report
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run coverage json -o .coverage-core.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run python scripts/check_core_coverage.py .coverage-core.json --minimum 90
+
+  frontend:
+    name: Node 24 / Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Audit dependencies
+        run: npm run audit
+      - name: Unit tests
+        run: npm test
+      - name: Type check
+        run: npm run typecheck
+      - name: Verify generated API types
+        run: |
+          npm run api:types:from-schema
+          git diff --exit-code -- web/src/api/schema.d.ts
+      - name: Production build
+        run: npm run build
+
+  e2e:
+    name: Browser / Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.8"
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked dependencies
+        run: |
+          uv sync --locked --extra dev
+          npm ci
+      - name: Install browser
+        run: npx playwright install chromium
+      - name: Run browser and accessibility tests
+        run: npm run test:e2e
+      - name: Upload retained browser failure traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results
+          if-no-files-found: warn
+          include-hidden-files: false
+          retention-days: 7

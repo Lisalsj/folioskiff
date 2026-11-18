@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If FolioSkiff supports your research workflow, please cite the software."
+title: "页舟 · FolioSkiff"
+type: software
+authors:
+  - family-names: "Lisalsj"
+repository-code: "https://github.com/Lisalsj/folioskiff"
+url: "https://github.com/Lisalsj/folioskiff"
+version: 3.2.0
+date-released: 2026-11-18
+license: Apache-2.0
+abstract: >-
+  A local-first research-intent agent, paper recommendation, PDF reading,
+  annotation, and user-triggered AI analysis workspace for Windows.

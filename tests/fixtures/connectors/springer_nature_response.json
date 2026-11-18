@@ -1,0 +1,43 @@
+{
+  "apiMessage": "This JSON was provided by Springer Nature",
+  "query": "agent onlinedatefrom:2026-06-01 onlinedateto:2026-07-31",
+  "nextPage": "/meta/v2/json?q=agent&s=3&p=2&api_key=fixture",
+  "result": [
+    {"total": "3", "start": "1", "pageLength": "2", "recordsDisplayed": "2"}
+  ],
+  "records": [
+    {
+      "contentType": "Article",
+      "identifier": "doi:10.1007/s00100-026-00001-1",
+      "doi": "10.1007/s00100-026-00001-1",
+      "title": "Research Agents for Cancer Imaging",
+      "abstract": "An AI agent assists cancer imaging analysis.",
+      "creators": [
+        {"creator": "Researcher, Alice"},
+        {"creator": "Scientist, Bob"}
+      ],
+      "publicationDate": "2026-06-20",
+      "onlineDate": "2026-07-05",
+      "journalTitle": "Nature Machine Intelligence",
+      "publisher": "Springer Nature",
+      "openaccess": "true",
+      "url": [
+        {"format": "html", "platform": "web", "value": "https://link.springer.com/article/10.1007/s00100-026-00001-1"},
+        {"format": "pdf", "platform": "web", "value": "https://link.springer.com/content/pdf/10.1007/s00100-026-00001-1.pdf"}
+      ]
+    },
+    {
+      "contentType": "Chapter",
+      "identifier": "doi:10.1007/978-3-031-00000-0_2",
+      "title": "Agent Evaluation in Medicine",
+      "creators": [{"creator": "Li, Chen"}],
+      "publicationDate": "2026-07-01",
+      "onlineDate": "2026-07-01",
+      "publicationName": "AI in Medicine",
+      "publisher": "Springer Nature",
+      "url": [
+        {"format": "html", "platform": "web", "value": "https://link.springer.com/chapter/10.1007/978-3-031-00000-0_2"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a focused improvement aligned with the local-first research workflow.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: research-problem
+    attributes:
+      label: Research workflow problem
+      description: Describe the user problem rather than only a preferred implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: data-boundary
+    attributes:
+      label: Does this require new networking or private data access?
+      options: ["No", "Yes — networking", "Yes — private local data", "Unsure"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope confirmation
+      options:
+        - label: I checked the roadmap and existing issues for duplicates.
+          required: true
+        - label: This proposal does not request paywall bypassing or credential sharing.
+          required: true

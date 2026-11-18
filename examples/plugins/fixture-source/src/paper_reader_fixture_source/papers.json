@@ -1,0 +1,58 @@
+[
+  {
+    "external_id": "fixture-001",
+    "title": "Controllable Diffusion for Small Scientific Datasets",
+    "authors": ["Ada Researcher", "林同学"],
+    "abstract": "A deterministic offline fixture about controllable diffusion.",
+    "doi": "10.5555/fixture.001",
+    "published_at": "2026-05-03T08:00:00Z",
+    "updated_at": "2026-05-20T09:00:00Z",
+    "landing_url": "https://example.org/fixture-001",
+    "field_provenance": {"title": "fixture.title"},
+    "raw_payload": {"fixture": 1}
+  },
+  {
+    "external_id": "fixture-002",
+    "title": "Reliable Tool Use for Research Agents",
+    "authors": ["Grace Example"],
+    "abstract": "A deterministic offline fixture about research agents.",
+    "published_at": "2026-06-01T08:00:00Z",
+    "updated_at": "2026-06-04T09:00:00Z",
+    "landing_url": "https://example.org/fixture-002",
+    "field_provenance": {"title": "fixture.title"},
+    "raw_payload": {"fixture": 2}
+  },
+  {
+    "external_id": "fixture-003",
+    "title": "Multimodal Evidence for Cancer Screening",
+    "authors": ["Katherine Sample", "王研究员"],
+    "abstract": "A deterministic offline fixture about biomedical evidence.",
+    "published_at": "2026-06-10T08:00:00Z",
+    "updated_at": "2026-06-12T09:00:00Z",
+    "landing_url": "https://example.org/fixture-003",
+    "field_provenance": {"title": "fixture.title"},
+    "raw_payload": {"fixture": 3}
+  },
+  {
+    "external_id": "fixture-004",
+    "title": "Transparent Evaluation of Scientific Agents",
+    "authors": ["Edsger Fixture"],
+    "abstract": "A deterministic offline fixture for a second page.",
+    "published_at": "2026-06-16T08:00:00Z",
+    "updated_at": "2026-06-18T09:00:00Z",
+    "landing_url": "https://example.org/fixture-004",
+    "field_provenance": {"title": "fixture.title"},
+    "raw_payload": {"fixture": 4}
+  },
+  {
+    "external_id": "fixture-005",
+    "title": "Historical Paper Outside the Selected Month",
+    "authors": ["Old Example"],
+    "abstract": "A deterministic record used to verify month filtering.",
+    "published_at": "2026-04-01T08:00:00Z",
+    "updated_at": "2026-04-02T09:00:00Z",
+    "landing_url": "https://example.org/fixture-005",
+    "field_provenance": {"title": "fixture.title"},
+    "raw_payload": {"fixture": 5}
+  }
+]

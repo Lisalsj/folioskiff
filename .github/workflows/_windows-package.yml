@@ -1,0 +1,153 @@
+name: Reusable Windows package
+
+on:
+  workflow_call:
+    inputs:
+      database_revision:
+        description: Frozen Alembic database revision embedded in release metadata.
+        required: true
+        type: string
+    outputs:
+      artifact_name:
+        description: Immutable verification-bundle artifact name.
+        value: ${{ jobs.build.outputs.artifact_name }}
+      release_manifest_sha256:
+        description: SHA-256 of the verified release manifest.
+        value: ${{ jobs.build.outputs.release_manifest_sha256 }}
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12.10"
+  NODE_VERSION: "24.12.0"
+  UV_VERSION: "0.11.8"
+  INNO_VERSION: "6.7.1"
+
+jobs:
+  build:
+    name: Build audited Windows release
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      DATABASE_REVISION: ${{ inputs.database_revision }}
+    outputs:
+      artifact_name: ${{ steps.release.outputs['artifact-name'] }}
+      release_manifest_sha256: ${{ steps.release.outputs['release-manifest-sha256'] }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Validate immutable build inputs
+        shell: pwsh
+        run: |
+          if ($env:DATABASE_REVISION -notmatch '^[0-9]{4}[a-z]?_[a-z0-9_]+$') {
+            throw "Invalid database revision input."
+          }
+      - name: Verify release metadata
+        shell: pwsh
+        run: uv run python scripts/check_version.py
+      - name: Install locked build inputs
+        shell: pwsh
+        run: |
+          uv sync --locked --extra packaging
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          choco install innosetup --version $env:INNO_VERSION --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) { throw "Pinned Inno Setup compiler missing." }
+          $uninstallKeys = @(
+            "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1",
+            "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1",
+            "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1"
+          )
+          $registeredVersions = @(
+            foreach ($key in $uninstallKeys) {
+              if (Test-Path -LiteralPath $key) {
+                (Get-ItemProperty -LiteralPath $key).DisplayVersion
+              }
+            }
+          )
+          $registeredVersions = @($registeredVersions | Where-Object { $_ } | Sort-Object -Unique)
+          if ($registeredVersions.Count -ne 1 -or $registeredVersions[0] -ne $env:INNO_VERSION) {
+            throw "Pinned Inno Setup registration mismatch: $($registeredVersions -join ', ')"
+          }
+      - name: Build packaged SPA
+        shell: pwsh
+        run: |
+          npm run build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build onedir and complete release
+        id: release
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP "paper-reader-build"
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          uv run --frozen --extra packaging python scripts/build_windows.py --output dist/windows/paper-reader --work-root $work --skip-web-build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $buildPython = Join-Path $work "venv\Scripts\python.exe"
+          $npm = (Get-Command npm.cmd -ErrorAction Stop).Source
+          uv run --frozen --extra packaging python scripts/package_release.py dist/windows/paper-reader --output-dir dist/release --iscc $iscc --python $buildPython --npm $npm --git-commit $env:GITHUB_SHA --database-revision $env:DATABASE_REVISION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run --frozen --extra packaging python scripts/build_release_metadata.py verify dist/release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $bundle = Join-Path $env:RUNNER_TEMP "verification-bundle"
+          New-Item -ItemType Directory -Path (Join-Path $bundle "release") -Force | Out-Null
+          Copy-Item -Path "dist/release\*" -Destination (Join-Path $bundle "release") -Recurse
+          Copy-Item -LiteralPath "packaging/windows/clean-smoke.ps1" -Destination $bundle
+          $digest = (Get-FileHash -Algorithm SHA256 -LiteralPath "dist/release/release-manifest.json").Hash.ToLowerInvariant()
+          $artifact = "paper-reader-windows-$env:GITHUB_SHA"
+          "release-manifest-sha256=$digest" >> $env:GITHUB_OUTPUT
+          "artifact-name=$artifact" >> $env:GITHUB_OUTPUT
+      - name: Upload immutable verification bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.release.outputs['artifact-name'] }}
+          path: ${{ runner.temp }}/verification-bundle
+          if-no-files-found: error
+          include-hidden-files: false
+          compression-level: 0
+          retention-days: 14
+
+  verify:
+    name: Source-free install and portable verification
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Download immutable verification bundle
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: ${{ runner.temp }}/verification-bundle
+          digest-mismatch: error
+      - name: Run clean Windows smoke
+        shell: powershell
+        run: |
+          & "$env:RUNNER_TEMP\verification-bundle\clean-smoke.ps1" `
+            -ReleaseDirectory "$env:RUNNER_TEMP\verification-bundle\release" `
+            -ExpectedManifestSha256 "${{ needs.build.outputs.release_manifest_sha256 }}" `
+            -StartupBudgetMs 40000
+      - name: Upload redacted smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: paper-reader-clean-smoke-${{ github.sha }}
+          path: ${{ runner.temp }}/paper-reader-clean-smoke-evidence.json
+          if-no-files-found: error
+          include-hidden-files: false
+          compression-level: 0
+          retention-days: 14

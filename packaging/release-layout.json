@@ -1,0 +1,38 @@
+{
+  "schema_version": "paper-reader-release-layout-v1",
+  "application": "paper-reader",
+  "platform": "windows",
+  "architecture": "x86_64",
+  "bundle_mode": "onedir",
+  "entrypoint": "paper-reader.exe",
+  "internal_directory": "_internal",
+  "api_version": "v1",
+  "database_schema_revision": "0038_remove_legacy_conversations",
+  "openapi_sha256": "5c69bd4bfe08e2f3403cf15875c0b71d7df4ec6d4ea4ea7b8dffec7c33c1df8a",
+  "plugin_protocol_version": "1.0",
+  "required_top_level_files": [
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "paper-reader.exe",
+    "release-manifest.json"
+  ],
+  "forbidden_suffixes": [
+    ".bin",
+    ".ckpt",
+    ".onnx",
+    ".pt",
+    ".pth",
+    ".safetensors"
+  ],
+  "forbidden_names": [
+    ".git",
+    ".huggingface",
+    "archive",
+    "backups",
+    "credentials.json",
+    "models",
+    "node.exe",
+    "paper-reader.sqlite3",
+    "python.exe"
+  ]
+}

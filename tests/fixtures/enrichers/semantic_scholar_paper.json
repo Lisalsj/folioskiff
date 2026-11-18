@@ -1,0 +1,35 @@
+{
+  "paperId": "0123456789abcdef0123456789abcdef01234567",
+  "externalIds": {
+    "DOI": "10.5555/agent.2026.1",
+    "ArXiv": "2607.00001",
+    "CorpusId": 300000001
+  },
+  "url": "https://www.semanticscholar.org/paper/0123456789abcdef0123456789abcdef01234567",
+  "venue": "J. Reliable Agents",
+  "publicationVenue": {
+    "id": "venue-100",
+    "name": "Journal of Reliable Agents",
+    "type": "journal",
+    "alternate_names": ["J. Reliable Agents"],
+    "url": "https://example.org/jra"
+  },
+  "publicationTypes": ["JournalArticle"],
+  "year": 2026,
+  "referenceCount": 18,
+  "citationCount": 40,
+  "influentialCitationCount": 7,
+  "isOpenAccess": true,
+  "openAccessPdf": {
+    "url": "https://example.org/paper.pdf",
+    "status": "GOLD",
+    "license": "CCBY"
+  },
+  "fieldsOfStudy": ["Computer Science"],
+  "s2FieldsOfStudy": [
+    {"category": "Computer Science", "source": "s2-fos-model"}
+  ],
+  "authors": [
+    {"authorId": "100", "name": "Alice Researcher"}
+  ]
+}

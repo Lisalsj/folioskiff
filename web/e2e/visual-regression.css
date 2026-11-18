@@ -1,0 +1,16 @@
+/*
+ * Playwright stitches full-page screenshots while fixed elements stay at the
+ * viewport edge. Place the mobile shell navigation at the end of the stitched
+ * page so the baseline captures it once without covering intermediate content.
+ * Runtime positioning remains covered by the foundation interaction tests.
+ */
+@media (max-width: 640px) {
+  .app-shell:not(.is-reader-workspace) {
+    position: relative !important;
+  }
+
+  .app-shell:not(.is-reader-workspace) > .sidebar {
+    position: absolute !important;
+    inset: auto 0 0 !important;
+  }
+}

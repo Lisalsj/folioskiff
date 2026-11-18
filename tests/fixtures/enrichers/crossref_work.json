@@ -1,0 +1,34 @@
+{
+  "status": "ok",
+  "message-type": "work",
+  "message-version": "1.0.0",
+  "message": {
+    "DOI": "10.5555/agent.2026.1",
+    "type": "journal-article",
+    "title": ["Reliable Paper Reading Agents"],
+    "container-title": ["Journal of Reliable Agents"],
+    "publisher": "Example Research Society",
+    "ISSN": ["1234-5678"],
+    "reference-count": 18,
+    "is-referenced-by-count": 41,
+    "license": [
+      {
+        "URL": "https://creativecommons.org/licenses/by/4.0/",
+        "start": {"date-time": "2026-06-01T00:00:00Z"},
+        "delay-in-days": 0,
+        "content-version": "vor"
+      }
+    ],
+    "funder": [
+      {"DOI": "10.13039/501100001809", "name": "National Natural Science Foundation of China"}
+    ],
+    "relation": {
+      "is-preprint-of": [
+        {"id-type": "doi", "id": "10.5555/agent.2026.2", "asserted-by": "subject"}
+      ]
+    },
+    "update-to": [],
+    "published": {"date-parts": [[2026, 6, 1]]},
+    "indexed": {"date-time": "2026-07-12T07:30:00Z"}
+  }
+}

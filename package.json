@@ -1,0 +1,80 @@
+{
+  "name": "paper-reader",
+  "version": "3.2.0",
+  "private": true,
+  "type": "module",
+  "description": "FolioSkiff local-first paper discovery, reading and analysis workspace.",
+  "license": "Apache-2.0",
+  "author": "Lisalsj",
+  "homepage": "https://github.com/Lisalsj/folioskiff#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lisalsj/folioskiff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Lisalsj/folioskiff/issues"
+  },
+  "keywords": [
+    "academic-papers",
+    "research-agent",
+    "paper-recommendation",
+    "pdf-reader"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "build:budget": "npm run build && node scripts/check_vite_budget.mjs",
+    "api:schema": "uv run python -m paper_reader.openapi --output openapi/openapi.json",
+    "api:types": "npm run api:schema && npm run api:types:from-schema",
+    "api:types:from-schema": "openapi-typescript openapi/openapi.json -o web/src/api/schema.d.ts",
+    "version:check": "uv run python scripts/check_version.py",
+    "clean:artifacts": "powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/clean-artifacts.ps1",
+    "audit": "node --test scripts/check_npm_audit.test.mjs && node scripts/check_npm_audit.mjs",
+    "audit:security": "powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/security_audit.ps1",
+    "preview": "vite preview",
+    "quality:fast": "powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/quality.ps1 -Scope fast",
+    "quality": "powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/quality.ps1 -Scope full",
+    "quality:release": "powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/quality.ps1 -Scope release",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "vue-tsc -b"
+  },
+  "dependencies": {
+    "@phosphor-icons/vue": "^2.2.1",
+    "pdfjs-dist": "^6.2.108",
+    "pinia": "^4.0.2",
+    "reka-ui": "^2.5.0",
+    "vue": "^3.5.43",
+    "vue-router": "^5.2.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^24.13.3",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^27.4.0",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vitest": "4.1.12",
+    "vue-tsc": "^3.3.14"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "overrides": {
+    "glob": "14.0.6",
+    "editorconfig": {
+      ".": "4.0.1",
+      "minimatch": "11.0.8"
+    },
+    "picomatch": "4.0.7",
+    "brace-expansion": "5.0.12",
+    "js-yaml": "4.3.2",
+    "nanoid": "3.3.18",
+    "postcss": "8.5.26",
+    "source-map-js": "1.2.2"
+  }
+}
