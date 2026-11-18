@@ -94,7 +94,7 @@ test('reader operations keep preview-first cache cleanup and cancelled acquisiti
     if (path === '/api/v1/events' && method === 'GET') return route.abort()
     if (path === '/api/v1/settings/sources' && method === 'GET') return json(route, [])
     if (path === '/api/v1/settings/updates' && method === 'GET') return json(route, {
-      current_version: '0.6.0', automatic_checks_enabled: true, status: 'never_checked',
+      current_version: '0.6.0', automatic_checks_enabled: false, status: 'never_checked',
       checked: false, last_checked_at: null, next_automatic_check_at: null,
       error_code: null, release: null,
     })

@@ -35,7 +35,7 @@
 
 从 [GitHub Releases](https://github.com/Lisalsj/folioskiff/releases) 下载 Windows 安装包或便携 ZIP，并核对同版本 SHA-256。应用会启动仅限回环地址访问的本地服务并自动打开浏览器；成品运行不需要 Python 或 Node.js。
 
-3.x 用户请手动下载安装 3.2.0 一次。安装程序会沿用已有安装目录和本地论文库，后续更新由 FolioSkiff 仓库提供。
+旧版 3.x 用户请手动下载安装 3.2.0 一次。安装程序会沿用已有安装目录和本地论文库。以后需要查询新版时，在「设置 → 关于 → 应用更新」选择「立即检查」，页舟才会联系 GitHub。
 
 ### 从源码运行
 

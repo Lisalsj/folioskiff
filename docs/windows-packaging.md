@@ -29,10 +29,10 @@ Node.js 或 uv。主 `ci.yml` 仅响应 PR、`main` push 或手动事件，保�
 构建输入固定为 Python `3.12.10`、Node.js `24.12.0`、uv `0.11.8` 和 Inno Setup
 `6.7.1`。Python 3.12.10 是官方发布 Windows x64 安装包的最后一个 3.12 版本；后续
 3.12 安全维护版仅发布源码，不能作为免 Python Windows 构建的 runner 工具链。官方
-Actions 使用 `checkout@v6`、`setup-python@v6`、`setup-node@v6`、
-`upload-artifact@v7` 与 `download-artifact@v8`；GitHub Actions 依赖由 Dependabot 每月
-检查。`setup-uv` 从 v8 起不再发布可移动的主/次版本标签，因此固定到 v8.3.2 的完整提交
-`11f9893b081a58869d3b5fccaea48c9e9e46f990`。版本升级必须先通过契约测试、远程引用
+Actions 使用 `checkout@v7`、`setup-python@v7`、`setup-node@v7`、
+`upload-artifact@v7` 与 `download-artifact@v8`。维护者手动更新这些依赖。
+`setup-uv` 固定到 v9.0.0 的完整提交
+`c771a70e6277c0a99b617c7a806ffedaca235ff9`。版本升级必须先通过契约测试、远程引用
 解析与 `actionlint`，不能仅改标签。
 
 Inno Setup 使用 Chocolatey 社区仓库已批准且可复核下载的精确版本 6.7.1。更改该版本

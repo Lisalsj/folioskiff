@@ -20,7 +20,6 @@ export default defineConfig({
     command: 'npm run build && uv run python -m paper_reader.cli serve --no-browser --port 4178',
     env: {
       PAPER_READER_CACHE_ROOT: resolve(e2eRoot, 'cache'),
-      PAPER_READER_DISABLE_UPDATE_CHECKS: '1',
       PAPER_READER_LIBRARY_ROOT: resolve(e2eRoot, 'library'),
       PAPER_READER_STATE_ROOT: resolve(e2eRoot, 'state'),
     },

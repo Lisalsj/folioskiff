@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 
 import httpx
@@ -16,8 +15,6 @@ FUTURE_RELEASE_VERSION = "999.0.0"
 def update_app(
     tmp_path: Path,
     handler,
-    *,
-    automatic_update_checks: bool = False,
 ):  # type: ignore[no-untyped-def]
     from paper_reader.app import create_app
     from paper_reader.settings import AppPaths
@@ -30,7 +27,6 @@ def update_app(
         ),
         bootstrap_token="secret",
         update_transport=httpx.MockTransport(handler),
-        automatic_update_checks=automatic_update_checks,
     )
 
 
@@ -52,6 +48,8 @@ async def test_update_api_requires_local_session_and_csrf_for_commands(tmp_path:
         assert initial.status_code == 200
         assert initial.json()["status"] == "never_checked"
         assert initial.json()["current_version"] == __version__
+        assert initial.json()["automatic_checks_enabled"] is False
+        assert initial.json()["next_automatic_check_at"] is None
         assert calls == 0
 
         assert (await client.post("/api/v1/settings/updates/check")).status_code == 403
@@ -74,7 +72,18 @@ async def test_update_api_requires_local_session_and_csrf_for_commands(tmp_path:
             headers=headers,
         )
         assert disabled.status_code == 200
-        assert disabled.json()["status"] == "disabled"
+        assert disabled.json()["status"] == "update_available"
+        assert disabled.json()["automatic_checks_enabled"] is False
+
+        reenabled = await client.patch(
+            "/api/v1/settings/updates",
+            json={"automatic_checks_enabled": True},
+            headers=headers,
+        )
+        assert reenabled.status_code == 200
+        assert reenabled.json()["automatic_checks_enabled"] is False
+        assert reenabled.json()["status"] == "update_available"
+        assert calls == 1
 
         cleared = await client.delete(
             "/api/v1/settings/updates/cache",
@@ -109,23 +118,39 @@ async def test_update_api_rejects_unknown_settings_fields_and_never_exposes_raw_
 
 
 @pytest.mark.asyncio
-async def test_open_application_runs_one_due_automatic_check(tmp_path: Path) -> None:
-    called = asyncio.Event()
+async def test_reopening_an_old_auto_enabled_library_only_reads_cached_update_metadata(
+    tmp_path: Path,
+) -> None:
+    from paper_reader.updates.models import UpdateSettingsRecord
+
     calls = 0
 
     def handler(_request: httpx.Request) -> httpx.Response:
         nonlocal calls
         calls += 1
-        called.set()
         return httpx.Response(200, json=github_release(FUTURE_RELEASE_VERSION))
 
-    app = update_app(tmp_path, handler, automatic_update_checks=True)
+    app = update_app(tmp_path, handler)
+    async with local_client(app):
+        with app.state.sessions.begin() as session:
+            session.add(UpdateSettingsRecord(id="default", automatic_checks_enabled=True))
+
+    app = update_app(tmp_path, handler)
     async with local_client(app) as client:
-        await asyncio.wait_for(called.wait(), timeout=2)
         headers = await bootstrap(client)
         status = await client.get("/api/v1/settings/updates", headers=headers)
         assert status.status_code == 200
+        assert status.json()["automatic_checks_enabled"] is False
+        assert status.json()["status"] == "never_checked"
+        assert calls == 0
+        assert (await client.post("/api/v1/settings/updates/check", headers=headers)).is_success
+
+    app = update_app(tmp_path, handler)
+    async with local_client(app) as client:
+        await bootstrap(client)
+        status = await client.get("/api/v1/settings/updates")
         assert status.json()["status"] == "update_available"
+        assert status.json()["next_automatic_check_at"] is None
         assert calls == 1
 
 

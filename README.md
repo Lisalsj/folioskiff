@@ -35,7 +35,7 @@ The current source targets `3.2.0`. The Windows installer and portable package a
 
 Download the Windows installer or portable ZIP and its SHA-256 file from [GitHub Releases](https://github.com/Lisalsj/folioskiff/releases). The application starts a loopback-only service and opens the browser automatically. Python and Node.js are not required for packaged builds.
 
-For a 3.x installation, download and run the 3.2.0 installer manually once. It uses the existing program identity and library. From 3.2.0, update checks read releases from the FolioSkiff repository.
+For an earlier 3.x installation, download and run the 3.2.0 installer once. It uses the existing program directory and library. To check for a later release, open **Settings → About → App updates** and select **Check now**. FolioSkiff checks GitHub only when you ask.
 
 ### Run from source
 

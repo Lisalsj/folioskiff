@@ -29,11 +29,11 @@ const release = {
 function updateSnapshot(overrides: Record<string, unknown> = {}) {
   return {
     current_version: '0.6.0',
-    automatic_checks_enabled: true,
+    automatic_checks_enabled: false,
     status: 'update_available',
     checked: false,
     last_checked_at: '2026-07-14T09:30:00Z',
-    next_automatic_check_at: '2026-07-15T09:30:00Z',
+    next_automatic_check_at: null,
     error_code: null,
     release,
     ...overrides,
@@ -112,19 +112,12 @@ test('update review is read-only, consent-first, responsive, and accessible', as
       mutations.push('check')
       return json(route, current)
     }
-    if (path === '/api/v1/settings/updates' && method === 'PATCH') {
-      mutations.push('toggle')
-      current = updateSnapshot({ automatic_checks_enabled: false, status: 'disabled' })
-      return json(route, current)
-    }
     if (path === '/api/v1/settings/updates/cache' && method === 'DELETE') {
       mutations.push('clear')
       current = updateSnapshot({
-        automatic_checks_enabled: false,
-        status: 'disabled',
+        status: 'never_checked',
         release: null,
         last_checked_at: null,
-        next_automatic_check_at: null,
       })
       return json(route, current)
     }
@@ -160,6 +153,8 @@ test('update review is read-only, consent-first, responsive, and accessible', as
   await page.goto('/settings/about')
   const section = page.locator('.update-settings')
   await expect(page.getByRole('heading', { level: 2, name: '应用更新' })).toBeVisible()
+  await expect(section.getByRole('checkbox')).toHaveCount(0)
+  await expect(section).toContainText('只有点击“立即检查”时才会向 GitHub 查询新版本')
   await expect(section).toContainText('当前版本')
   await expect(section).toContainText('0.6.0')
   await expect(section).toContainText('0.8.0')

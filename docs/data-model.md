@@ -153,12 +153,12 @@
 
 `UpdateSettingsRecord` 是 `id = default` 的单例设置行，字段边界如下：
 
-- `automatic_checks_enabled`：只控制应用打开时的 24 小时自动检查；关闭后仍允许用户显式手动检查。
+- `automatic_checks_enabled` 是旧版偏好列。应用统一使用手动检查。v1 设置接口接受旧客户端 PATCH 的布尔值，始终返回生效值 `false` 和 `next_automatic_check_at: null`。
 - `last_checked_at`：最近一次实际访问固定 GitHub 端点的 UTC 时间；被节流的读取不推进时间。
 - `last_status` / `last_error_code`：关闭式、无原始异常的粗粒度结果，例如 `update_available`、`offline` 或 `rate_limited`。
 - `cached_release_json`：只保存已经通过版本、仓库 URL、日期、纯文本、能力矩阵和命名资产校验的公开 Release 投影；不保存下载 URL、响应正文、响应头、cookie、设备信息、路径、论文、偏好或凭据。
 
-清除更新记录只把检查时间、状态和公开 Release 投影恢复为空，不改变自动检查开关，也不删除应用、论文库或备份。`0027_update_settings` 只新增该单例表，不迁移旧业务数据。
+清除更新记录会重置检查时间、状态和公开 Release 缓存。`0027_update_settings` 添加了这个单例表。
 
 ## 7. 来源修订与论文更新
 

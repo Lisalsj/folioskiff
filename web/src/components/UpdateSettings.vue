@@ -185,22 +185,6 @@ async function checkNow(): Promise<void> {
   }
 }
 
-async function toggleAutomatic(event: Event): Promise<void> {
-  const enabled = (event.target as HTMLInputElement).checked
-  busy.value = 'toggle'
-  error.value = ''
-  try {
-    snapshot.value = await apiJson<UpdateSnapshot>('/api/v1/settings/updates', {
-      method: 'PATCH',
-      body: JSON.stringify({ automatic_checks_enabled: enabled }),
-    })
-  } catch (caught) {
-    error.value = caught instanceof Error ? caught.message : '无法保存自动检查设置'
-  } finally {
-    busy.value = ''
-  }
-}
-
 async function clearCache(): Promise<void> {
   busy.value = 'clear'
   error.value = ''
@@ -233,7 +217,7 @@ onMounted(() => void load())
       <div>
         <p class="eyebrow">RELEASES</p>
         <h2 id="update-settings-title">{{ t('应用更新') }}</h2>
-        <p>{{ t('只读取固定仓库的公开发布信息；应用不会自行下载、安装或重启。') }}</p>
+        <p>{{ t('只有点击“立即检查”时才会向 GitHub 查询新版本。你可以在发布页手动下载安装包。') }}</p>
       </div>
       <PhGithubLogo :size="28" aria-hidden="true" />
     </div>
@@ -312,52 +296,37 @@ onMounted(() => void load())
         </div>
 
         <div class="update-actions">
-          <label class="automatic-toggle">
-            <input
-              data-test="automatic-update-checks"
-              type="checkbox"
-              :checked="snapshot.automatic_checks_enabled"
-              :disabled="Boolean(busy)"
-              @change="toggleAutomatic"
-            >
-            <span>
-              <strong>{{ t('每 24 小时最多检查一次') }}</strong>
-              <small>{{ t('仅在 FolioSkiff 打开时进行，不在系统后台运行。') }}</small>
-            </span>
-          </label>
-          <div class="button-row">
-            <button
-              data-test="clear-update-cache"
-              type="button"
-              class="quiet-button"
-              :disabled="Boolean(busy) || (!snapshot.last_checked_at && !release)"
-              @click="clearCache"
-            >
-              <PhClockCounterClockwise :size="17" aria-hidden="true" />
-              {{ t('清除记录') }}
-            </button>
-            <button
-              data-test="check-updates"
-              type="button"
-              class="quiet-button"
-              :disabled="Boolean(busy)"
-              @click="checkNow"
-            >
-              <PhArrowsClockwise :size="17" aria-hidden="true" />
-              {{ busy === 'check' ? t('正在检查…') : t('立即检查') }}
-            </button>
-            <button
-              v-if="snapshot.status === 'update_available' && validatedReleaseUrl"
-              data-test="review-update"
-              type="button"
-              class="primary-button"
-              :disabled="Boolean(busy)"
-              @click="reviewOpen = true"
-            >
-              {{ t('查看并更新') }}
-              <PhArrowSquareOut :size="17" aria-hidden="true" />
-            </button>
-          </div>
+          <button
+            data-test="clear-update-cache"
+            type="button"
+            class="quiet-button"
+            :disabled="Boolean(busy) || (!snapshot.last_checked_at && !release)"
+            @click="clearCache"
+          >
+            <PhClockCounterClockwise :size="17" aria-hidden="true" />
+            {{ t('清除记录') }}
+          </button>
+          <button
+            data-test="check-updates"
+            type="button"
+            class="quiet-button"
+            :disabled="Boolean(busy)"
+            @click="checkNow"
+          >
+            <PhArrowsClockwise :size="17" aria-hidden="true" />
+            {{ busy === 'check' ? t('正在检查…') : t('立即检查') }}
+          </button>
+          <button
+            v-if="snapshot.status === 'update_available' && validatedReleaseUrl"
+            data-test="review-update"
+            type="button"
+            class="primary-button"
+            :disabled="Boolean(busy)"
+            @click="reviewOpen = true"
+          >
+            {{ t('查看并更新') }}
+            <PhArrowSquareOut :size="17" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </template>
@@ -509,22 +478,16 @@ onMounted(() => void load())
 .update-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 20px;
   padding: 17px 20px;
   border-top: 1px solid var(--color-line);
   background: var(--color-paper-deep);
 }
 
-.automatic-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-.automatic-toggle input { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--color-forest); }
-.automatic-toggle strong,
-.automatic-toggle small { display: block; }
-.automatic-toggle strong { font-size: var(--type-meta); }
-.automatic-toggle small { margin-top: 3px; color: var(--color-muted); font-size: var(--type-meta); line-height: 1.5; }
-.button-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.button-row button,
+.update-actions button,
 .dialog-actions button {
   display: inline-flex;
   align-items: center;
@@ -540,9 +503,9 @@ onMounted(() => void load())
   font-weight: 700;
   cursor: pointer;
 }
-.button-row .primary-button,
+.update-actions .primary-button,
 .dialog-actions .confirm { border-color: var(--color-forest); background: var(--color-forest); color: var(--color-on-accent); }
-.button-row button:disabled { opacity: 0.52; cursor: wait; }
+.update-actions button:disabled { opacity: 0.52; cursor: wait; }
 
 .notice { margin: 15px 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--color-paper-deep); color: var(--color-muted); font-size: var(--type-meta); }
 .notice.error { color: var(--color-danger); }
@@ -577,9 +540,7 @@ onMounted(() => void load())
   .version-strip { grid-template-columns: 1fr; }
   .version-strip > div + div { border-top: 1px solid var(--color-line); border-left: 0; }
   .release-copy-grid { grid-template-columns: 1fr; }
-  .update-actions { align-items: stretch; flex-direction: column; }
-  .button-row { justify-content: stretch; }
-  .button-row button { flex: 1 1 130px; }
+  .update-actions button { flex: 1 1 130px; }
 }
 
 @media (forced-colors: active) {

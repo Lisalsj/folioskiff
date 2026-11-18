@@ -19,6 +19,7 @@ Back up the library, then install 3.2.0 manually once. Earlier builds check the 
 
 ### Changed
 
+- Check for a new release on demand in Settings → About. Maintainers update Python, npm and GitHub Actions dependencies manually.
 - Search the library across pages when selecting papers for comparison and publication. Preserve active filters when opening a shared search URL.
 - Load independent briefing data and batch the underlying queries.
 - Use a quieter PDF workspace, clearer paper metadata and mobile controls that keep the reading area visible.

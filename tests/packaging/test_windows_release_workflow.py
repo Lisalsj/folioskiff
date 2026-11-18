@@ -7,7 +7,6 @@ ROOT = Path(__file__).parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "package-windows.yml"
 REUSABLE = ROOT / ".github" / "workflows" / "_windows-package.yml"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
-DEPENDABOT = ROOT / ".github" / "dependabot.yml"
 SETUP_UV_ACTION = "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9"  # v9.0.0
 
 
@@ -300,14 +299,7 @@ def test_browser_failures_upload_retained_playwright_traces() -> None:
     assert "if-no-files-found: warn" in source
 
 
-def test_dependabot_groups_monthly_updates_and_limits_full_builds() -> None:
-    source = _source(DEPENDABOT)
-
-    for group in ("python-runtime", "node-toolchain", "github-actions"):
-        assert f"{group}:" in source
-    for dependency in ("typescript", "jsdom", "@types/node"):
-        assert f'dependency-name: "{dependency}"' in source
-    assert source.count("interval: monthly") == 3
-    assert source.count("open-pull-requests-limit: 1") == 3
-    assert source.count('patterns: ["*"]') == 3
-    assert source.count('update-types: ["version-update:semver-major"]') == 3
+def test_dependency_updates_are_manually_initiated() -> None:
+    for filename in ("dependabot.yml", "dependabot.yaml"):
+        assert not (ROOT / ".github" / filename).exists()
+    assert not re.search(r"(?m)^  schedule:", _source(CI_WORKFLOW))

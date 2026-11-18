@@ -27,7 +27,7 @@ class UpdateSettingsRecord(Base):
     )
 
     id: Mapped[str] = mapped_column(String(16), primary_key=True, default="default")
-    automatic_checks_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    automatic_checks_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_status: Mapped[str] = mapped_column(String(32), default="never_checked")
     last_error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)

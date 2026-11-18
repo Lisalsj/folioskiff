@@ -87,6 +87,7 @@ const updateLabel = computed(() => {
   if (!status) return t('尚未读取更新状态')
   if (status === 'update_available') return t('发现可选更新')
   if (status === 'up_to_date') return t('当前已是最新版本')
+  if (status === 'never_checked') return t('尚未检查更新')
   if (status === 'disabled') return t('自动检查已关闭')
   return t('更新状态需要查看')
 })

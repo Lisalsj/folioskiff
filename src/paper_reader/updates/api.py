@@ -37,7 +37,9 @@ def change_update_settings(
     payload: UpdateSettingsRequest,
     request: Request,
 ) -> UpdateSnapshot:
-    return _service(request).set_automatic_checks(payload.automatic_checks_enabled)
+    # Older v1 clients submit their saved preference here. Return the effective
+    # manual-only policy for either value without discarding cached checks.
+    return _service(request).snapshot()
 
 
 @router.post(

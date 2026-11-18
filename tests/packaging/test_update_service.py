@@ -336,7 +336,7 @@ async def test_oversized_response_is_rejected_before_json_parsing(tmp_path: Path
 
 
 @pytest.mark.asyncio
-async def test_automatic_checks_are_disabled_or_throttled_for_twenty_four_hours(
+async def test_only_explicit_checks_fetch_release_metadata_even_after_a_day(
     tmp_path: Path,
 ) -> None:
     current = NOW
@@ -348,36 +348,27 @@ async def test_automatic_checks_are_disabled_or_throttled_for_twenty_four_hours(
         return httpx.Response(200, json=github_release())
 
     engine, service = service_for(tmp_path, handler, clock=lambda: current)
-    first = await service.check_if_due()
-    assert first.checked is True
-    assert calls == 1
-
-    current += timedelta(hours=23, minutes=59)
-    skipped = await service.check_if_due()
-    assert skipped.checked is False
-    assert calls == 1
-
-    current += timedelta(minutes=1)
-    due = await service.check_if_due()
-    assert due.checked is True
-    assert calls == 2
-
-    disabled = service.set_automatic_checks(False)
-    assert disabled.automatic_checks_enabled is False
-    current += timedelta(days=2)
-    skipped_disabled = await service.check_if_due()
-    assert skipped_disabled.status == "disabled"
-    assert calls == 2
-
+    first = await service.check(manual=False)
+    assert first.checked is False
+    assert first.status == "never_checked"
+    assert calls == 0
     manual = await service.check(manual=True)
     assert manual.checked is True
     assert manual.automatic_checks_enabled is False
-    assert calls == 3
+    assert manual.next_automatic_check_at is None
+    assert calls == 1
+
+    current += timedelta(days=2)
+    cached = await service.check(manual=False)
+    assert cached.checked is False
+    assert cached.last_checked_at == NOW
+    assert cached.release == manual.release
+    assert calls == 1
 
     cleared = service.clear_cache()
     assert cleared.last_checked_at is None
     assert cleared.release is None
-    assert cleared.status == "disabled"
+    assert cleared.status == "never_checked"
     await service.aclose()
     engine.dispose()
 

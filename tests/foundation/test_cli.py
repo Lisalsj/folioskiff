@@ -74,7 +74,6 @@ def test_launcher_publishes_only_after_server_ready_and_reuses_prebound_socket(
         bootstrap_token="bootstrap-secret",
         activation_secret="activation-secret",
         credential_store=create_app.call_args.kwargs["credential_store"],
-        automatic_update_checks=True,
         runtime_control=create_app.call_args.kwargs["runtime_control"],
     )
     assert isinstance(create_app.call_args.kwargs["runtime_control"], RuntimeControl)

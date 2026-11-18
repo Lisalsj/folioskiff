@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import socket
 import sys
 from collections.abc import Sequence
@@ -220,7 +219,6 @@ def _run_owned_server_once(
             bootstrap_token=bootstrap_token,
             activation_secret=activation_secret,
             credential_store=KeyringCredentialStore(),
-            automatic_update_checks=os.environ.get("PAPER_READER_DISABLE_UPDATE_CHECKS") != "1",
             runtime_control=runtime_control,
         )
     except RestoreStartupError as error:

@@ -113,8 +113,8 @@ uv 0.11.8、Inno Setup 6.7.1 和数据库 revision 输入，不维护第二份�
 
 可复用工作流的 build artifact 同时包含封闭 release 与 `clean-smoke.ps1`；后续 verify job
 使用新的 Windows runner，只执行官方 `download-artifact@v8`，不 checkout 源码、不 setup
-Python/Node，也不继承构建 job 的工作目录或进程。Dependabot 对 Python、npm 和 Actions
-按月分组，每类最多保留一个开放 PR。安装器、便携包、SBOM 与 source-free smoke 属于
+Python/Node，也不继承构建 job 的工作目录或进程。维护者按需选择 Python、npm 或
+GitHub Actions 依赖版本，提交锁文件或工作流变更，并通过 CI 验证。安装器、便携包、SBOM 与 source-free smoke 属于
 显式发布门禁，不在每次 PR 中重复消耗 Windows 分钟；维护者在准备发行时手动运行一次，
 正式 tag 则再次执行同一条关闭式链路。
 

@@ -324,10 +324,6 @@ async def _resume_metadata_enrichment(
     )
 
 
-async def _run_update_check(service: UpdateService) -> None:
-    await service.check_if_due()
-
-
 def create_app(
     *,
     paths: AppPaths,
@@ -343,7 +339,6 @@ def create_app(
     publishing_git_publisher: SnapshotPublisher | None = None,
     update_transport: httpx.AsyncBaseTransport | None = None,
     related_url_verifier: PublicUrlVerifier | None = None,
-    automatic_update_checks: bool = False,
     system_timezone_provider: Callable[[], str] | None = None,
     runtime_control: RuntimeControl | None = None,
     onboarding_capability_probe: OnboardingCapabilityProbe | None = None,
@@ -901,11 +896,6 @@ def create_app(
                             tasks=background_tasks,
                         ),
                     )
-                    if automatic_update_checks:
-                        background_tasks.start(
-                            "update-check",
-                            partial(_run_update_check, update_service),
-                        )
                     from paper_reader.runtime_migration import complete_data_root_migration
 
                     complete_data_root_migration(paths)

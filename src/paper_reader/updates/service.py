@@ -7,7 +7,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from functools import total_ordering
 from typing import Any, Literal, Self, cast
 from urllib.parse import quote, urlsplit
@@ -21,7 +21,6 @@ from paper_reader.updates.models import UpdateSettingsRecord
 RELEASE_REPOSITORY = "Lisalsj/folioskiff"
 LATEST_RELEASE_ENDPOINT = f"https://api.github.com/repos/{RELEASE_REPOSITORY}/releases/latest"
 GITHUB_API_VERSION = "2026-03-10"
-CHECK_INTERVAL = timedelta(hours=24)
 MAX_RESPONSE_BYTES = 512 * 1024
 MAX_HEADER_BYTES = 64 * 1024
 _MANIFEST_START = "<!-- paper-reader-update-manifest:v1\n"
@@ -209,7 +208,6 @@ class _ReleaseSummary(BaseModel):
 
 @dataclass(frozen=True, slots=True)
 class _StoredState:
-    automatic_checks_enabled: bool = True
     last_checked_at: datetime | None = None
     last_status: PersistedStatus = "never_checked"
     last_error_code: str | None = None
@@ -223,14 +221,6 @@ class _UpdateRepository:
     def get(self) -> _StoredState:
         with self._sessions() as session:
             return self._domain(session.get(UpdateSettingsRecord, "default"))
-
-    def set_enabled(self, enabled: bool) -> _StoredState:
-        with self._sessions() as session:
-            record = self._required(session)
-            record.automatic_checks_enabled = enabled
-            session.commit()
-            session.refresh(record)
-            return self._domain(record)
 
     def record_check(
         self,
@@ -282,7 +272,6 @@ class _UpdateRepository:
             except ValidationError:
                 release = None
         return _StoredState(
-            automatic_checks_enabled=record.automatic_checks_enabled,
             last_checked_at=_aware_utc(record.last_checked_at),
             last_status=cast(PersistedStatus, record.last_status),
             last_error_code=record.last_error_code,
@@ -317,29 +306,16 @@ class UpdateService:
     def snapshot(self) -> UpdateSnapshot:
         return self._snapshot(self._repository.get(), checked=False)
 
-    def set_automatic_checks(self, enabled: bool) -> UpdateSnapshot:
-        return self._snapshot(self._repository.set_enabled(enabled), checked=False)
-
     def clear_cache(self) -> UpdateSnapshot:
         return self._snapshot(self._repository.clear(), checked=False)
 
-    async def check_if_due(self) -> UpdateSnapshot:
-        return await self.check(manual=False)
-
     async def check(self, *, manual: bool) -> UpdateSnapshot:
+        if not manual:
+            return self.snapshot()
         async with self._lock:
-            state = self._repository.get()
             now = _aware_utc(self._clock())
             if now is None:  # pragma: no cover - clock contract
                 raise RuntimeError("update clock returned no value")
-            if not manual:
-                if not state.automatic_checks_enabled:
-                    return self._snapshot(state, checked=False)
-                if (
-                    state.last_checked_at is not None
-                    and now - state.last_checked_at < CHECK_INTERVAL
-                ):
-                    return self._snapshot(state, checked=False)
             try:
                 release, status = await self._fetch_release()
                 state = self._repository.record_check(
@@ -434,8 +410,6 @@ class UpdateService:
         status: UpdateStatus
         if status_override is not None:
             status = status_override
-        elif not state.automatic_checks_enabled:
-            status = "disabled"
         elif state.release is not None and state.last_status in {
             "up_to_date",
             "update_available",
@@ -444,18 +418,13 @@ class UpdateService:
             status = self._version_relationship(state.release)
         else:
             status = state.last_status
-        next_check = (
-            state.last_checked_at + CHECK_INTERVAL
-            if state.automatic_checks_enabled and state.last_checked_at is not None
-            else None
-        )
         return UpdateSnapshot(
             current_version=self._current_version,
-            automatic_checks_enabled=state.automatic_checks_enabled,
+            automatic_checks_enabled=False,
             status=status,
             checked=checked,
             last_checked_at=state.last_checked_at,
-            next_automatic_check_at=next_check,
+            next_automatic_check_at=None,
             error_code=error_override if status_override is not None else state.last_error_code,
             release=state.release,
         )

@@ -187,7 +187,7 @@ Agent 专项门禁还必须比较正常正文与包含 shell、凭据、MCP、�
 - GitHub API 版本、媒体类型、User-Agent、超时、响应头和 512 KiB 正文上限固定。3xx 不跟随；限流、离线、5xx、错误 Content-Type、损坏 JSON 和超限响应只产生稳定状态，不把远端正文或本机异常返回页面。
 - Release tag、正文摘要和资产名称中的版本必须一致并满足严格 SemVer。HTML 页面只能是 `https://github.com/Lisalsj/folioskiff/releases/tag/<tag>`；资产元数据只能指向同一仓库同一 tag。跨 host、内嵌凭据、端口、query、fragment、重复/越界名称或缺失 `release-manifest.json` 全部失败关闭。
 - 变更与迁移是有长度、控制字符和 HTML 限制的纯文本；Vue 继续按文本渲染。能力矩阵和资产响应是关闭式投影，浏览器不接收 `browser_download_url`。
-- 自动检查只在应用进程存活时由启动器触发，SQLite 时间戳保证 24 小时节流；关闭后不访问网络。手动检查、关闭与清理均受本地会话、Origin 与 CSRF 保护。
+- 启动应用和打开设置时只读取本地更新记录。用户点击“立即检查”才联系 GitHub。检查和清除记录均受本地会话、Origin 与 CSRF 保护。
 - “查看并更新”不是下载命令。页面先显示未签名警告、变更与迁移，二次确认后只用 `noopener,noreferrer` 打开再次校验的固定 GitHub Release；应用不存在下载、执行安装器或静默重启路径。
 
 ## 9. Windows 发行内容边界

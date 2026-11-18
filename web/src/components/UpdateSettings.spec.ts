@@ -12,11 +12,11 @@ function response(body: unknown, status = 200): Response {
 
 const available = {
   current_version: '0.6.0',
-  automatic_checks_enabled: true,
+  automatic_checks_enabled: false,
   status: 'update_available',
   checked: true,
   last_checked_at: '2026-07-14T09:30:00Z',
-  next_automatic_check_at: '2026-07-15T09:30:00Z',
+  next_automatic_check_at: null,
   error_code: null,
   release: {
     version: '0.8.0',
@@ -41,7 +41,6 @@ const initial = {
   status: 'never_checked',
   checked: false,
   last_checked_at: null,
-  next_automatic_check_at: null,
   release: null,
 }
 
@@ -67,7 +66,8 @@ describe('UpdateSettings', () => {
     expect(wrapper.text()).toContain('可用版本')
     expect(wrapper.text()).toContain('0.8.0')
     expect(wrapper.text()).toContain('此版本尚未进行代码签名')
-    expect(wrapper.text()).toContain('应用不会自行下载、安装或重启')
+    expect(wrapper.text()).toContain('只有点击“立即检查”时才会向 GitHub 查询新版本')
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
     expect(requests).toEqual([{ method: 'GET', url: '/api/v1/settings/updates' }])
   })
 
@@ -127,40 +127,24 @@ describe('UpdateSettings', () => {
     expect(open).not.toHaveBeenCalled()
   })
 
-  it('can disable automatic checks and clear only cached public metadata', async () => {
-    const requests: Array<{ method: string; body?: string }> = []
-    vi.stubGlobal('fetch', vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+  it('clears the saved release on request and returns to the unchecked state', async () => {
+    const requests: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const method = init?.method ?? 'GET'
-      requests.push({ method, body: typeof init?.body === 'string' ? init.body : undefined })
+      requests.push(`${method} ${input}`)
       if (method === 'GET') return response(available)
-      if (method === 'PATCH') return response({
-        ...available,
-        automatic_checks_enabled: false,
-        status: 'disabled',
-        checked: false,
-      })
-      if (method === 'DELETE') return response({
-        ...initial,
-        automatic_checks_enabled: false,
-        status: 'disabled',
-      })
+      if (method === 'DELETE') return response(initial)
       throw new Error(`Unexpected method: ${method}`)
     }))
 
     const wrapper = mount(UpdateSettings, { attachTo: document.body })
     await flushPromises()
-    await wrapper.get('[data-test="automatic-update-checks"]').setValue(false)
-    await flushPromises()
-    expect(requests.at(-1)).toEqual({
-      method: 'PATCH',
-      body: JSON.stringify({ automatic_checks_enabled: false }),
-    })
-    expect(wrapper.text()).toContain('自动检查已关闭')
-
     await wrapper.get('[data-test="clear-update-cache"]').trigger('click')
     await flushPromises()
-    expect(requests.at(-1)?.method).toBe('DELETE')
-    expect(wrapper.text()).not.toContain('可用版本')
+    expect(requests).toEqual(['GET /api/v1/settings/updates', 'DELETE /api/v1/settings/updates/cache'])
+    expect(wrapper.text()).toContain('尚未检查更新')
+    expect(wrapper.get('[data-test="clear-update-cache"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-test="review-update"]').exists()).toBe(false)
   })
 
   it('presents offline state as a recoverable status without technical details', async () => {

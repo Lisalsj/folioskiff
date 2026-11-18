@@ -286,7 +286,7 @@ async function installSettingsFixture(page: Page): Promise<void> {
       return json(route, {
         current_version: '1.0.0',
         automatic_checks_enabled: false,
-        status: 'disabled',
+        status: 'never_checked',
         checked: false,
         last_checked_at: null,
         next_automatic_check_at: null,
