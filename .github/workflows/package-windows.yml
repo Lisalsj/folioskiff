@@ -2,8 +2,6 @@ name: Windows packaged distributions
 
 on:
   workflow_dispatch:
-  push:
-    tags: ["v*"]
 
 permissions:
   actions: read
@@ -30,7 +28,7 @@ jobs:
           if ($env:GITHUB_REPOSITORY -cnotmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') { throw "Invalid repository identity." }
           if ($env:GITHUB_API_URL -cne "https://api.github.com") { throw "Unexpected GitHub API origin." }
           if ([string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) { throw "GitHub token unavailable." }
-          $uri = "$($env:GITHUB_API_URL)/repos/$($env:GITHUB_REPOSITORY)/actions/workflows/ci.yml/runs?branch=main&event=push&status=success&head_sha=$headSha&exclude_pull_requests=true&per_page=100"
+          $uri = "$($env:GITHUB_API_URL)/repos/$($env:GITHUB_REPOSITORY)/actions/workflows/ci.yml/runs?branch=main&event=workflow_dispatch&status=success&head_sha=$headSha&exclude_pull_requests=true&per_page=100"
           $headers = @{
             Accept = "application/vnd.github+json"
             Authorization = "Bearer $($env:GITHUB_TOKEN)"
@@ -40,12 +38,12 @@ jobs:
           $matches = @($response.workflow_runs | Where-Object {
             $_.head_sha -ceq $headSha -and
             $_.head_branch -ceq "main" -and
-            $_.event -ceq "push" -and
+            $_.event -ceq "workflow_dispatch" -and
             $_.status -ceq "completed" -and
             $_.conclusion -ceq "success" -and
             $_.path -ceq ".github/workflows/ci.yml"
           })
-          if ($matches.Count -lt 1) { throw "No successful main CI run exists for the exact release commit." }
+          if ($matches.Count -lt 1) { throw "Manually run CI on main for this exact commit and wait for it to succeed before packaging." }
           $verified = $matches | Sort-Object id -Descending | Select-Object -First 1
           Write-Output "Verified CI run $($verified.id) for exact main commit $headSha."
 

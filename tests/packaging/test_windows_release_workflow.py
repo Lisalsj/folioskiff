@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "package-windows.yml"
 REUSABLE = ROOT / ".github" / "workflows" / "_windows-package.yml"
@@ -23,28 +25,25 @@ def _job(source: str, name: str) -> str:
     return match.group("body")
 
 
-def test_release_workflow_has_only_manual_and_tag_triggers() -> None:
-    trigger = _source(WORKFLOW).split("\npermissions:", 1)[0]
-
-    assert "workflow_dispatch:" in trigger
-    assert 'tags: ["v*"]' in trigger
-    for forbidden in (
-        "pull_request:",
-        "paths:",
-        "branches:",
-        "schedule:",
-        "pull_request_target:",
-    ):
-        assert forbidden not in trigger
+def test_cloud_workflows_can_only_start_manually() -> None:
+    enabled_events = {
+        path.name: set(yaml.load(_source(path), Loader=yaml.BaseLoader)["on"])
+        for path in WORKFLOW.parent.iterdir()
+        if path.suffix in {".yaml", ".yml"}
+    }
+    assert enabled_events == {
+        CI_WORKFLOW.name: {"workflow_dispatch"},
+        WORKFLOW.name: {"workflow_dispatch"},
+        REUSABLE.name: {"workflow_call"},
+    }
 
 
-def test_daily_ci_is_fast_and_release_reuses_windows_packaging() -> None:
+def test_manual_ci_and_release_have_separate_windows_packaging() -> None:
     ci = _source(CI_WORKFLOW)
     reusable = _source(REUSABLE)
     release = _source(WORKFLOW)
     release_package = _job(release, "windows-package")
 
-    assert "pull_request:" in ci.split("\npermissions:", 1)[0]
     assert "windows-package" not in ci
     assert "uses: ./.github/workflows/_windows-package.yml" not in ci
     assert "workflow_call:" in reusable.split("\npermissions:", 1)[0]
@@ -135,14 +134,15 @@ def test_release_reuses_exact_successful_main_ci_before_packaging() -> None:
     assert "/actions/workflows/ci.yml/runs?" in quality
     for token in (
         "branch=main",
-        "event=push",
+        "event=workflow_dispatch",
         "status=success",
         "head_sha=$headSha",
         "exclude_pull_requests=true",
         "headSha -cnotmatch '^[0-9a-f]{40}$'",
         'GITHUB_API_URL -cne "https://api.github.com"',
         'head_branch -ceq "main"',
-        'event -ceq "push"',
+        'head_sha -ceq $headSha',
+        'event -ceq "workflow_dispatch"',
         'status -ceq "completed"',
         'conclusion -ceq "success"',
         'path -ceq ".github/workflows/ci.yml"',
@@ -157,7 +157,7 @@ def test_release_reuses_exact_successful_main_ci_before_packaging() -> None:
     assert "uses: ./.github/workflows/_windows-package.yml" in package
 
 
-def test_main_ci_runs_all_daily_quality_jobs() -> None:
+def test_manual_ci_runs_all_quality_jobs() -> None:
     source = _source(CI_WORKFLOW)
     python_tests = _job(source, "python-tests")
     backend = _job(source, "backend")
@@ -302,4 +302,3 @@ def test_browser_failures_upload_retained_playwright_traces() -> None:
 def test_dependency_updates_are_manually_initiated() -> None:
     for filename in ("dependabot.yml", "dependabot.yaml"):
         assert not (ROOT / ".github" / filename).exists()
-    assert not re.search(r"(?m)^  schedule:", _source(CI_WORKFLOW))

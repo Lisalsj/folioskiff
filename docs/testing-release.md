@@ -100,31 +100,30 @@ Setup 6.7.3 真实编译；远程工作流使用 Chocolatey 可取得的 6.7.1�
 
 ### 4.1 独立 Windows runner 与 Sandbox
 
-`.github/workflows/_windows-package.yml` 只接受 `workflow_call`，是 Windows 构建与干净验证
-的唯一实现。日常 `ci.yml` 在 PR、`main` push 或手动触发时运行完整 Windows 后端、前端
-与浏览器门禁，但不重复构建发行制品；Python 测试由两个 `-n2` runner 分片并行执行，
-resource-sensitive 契约只在指定分片串行运行，随后由轻量 job 合并覆盖率并维持
-`Python 3.12 / Windows` 门禁名称。前端与浏览器也同时启动，最终状态要求所有分片和门禁
-全部成功。`package-windows.yml` 只接受手动触发和 `v*` tag，并通过只读 GitHub API 要求
-当前 SHA 已存在 `main` push 触发且成功的 `ci.yml`；PR、其他分支、其他 SHA、进行中或失败
-的结果都不能授权打包。它不再串行重跑同一套约一小时的质量门禁，确认精确 CI 证据后才
-调用可复用工作流。手动构建与 tag 因而使用相同的锁定 Python 3.12.10、Node 24.12.0、
-uv 0.11.8、Inno Setup 6.7.1 和数据库 revision 输入，不维护第二份打包逻辑。
+云端测试和打包仅由维护者手动启动。推送分支、创建或更新 PR、推送标签都不会启动这两项工作流。
+需要云端验证时，在本仓库的 **Actions → CI → Run workflow** 选择要测试的分支。
+准备发布时，选择 `main` 并记录成功运行的完整提交 SHA。CI 并行运行 Windows 后端、前端与
+浏览器测试。两个 Python 分片各使用两个 worker，指定分片另行串行运行资源敏感测试。
+所有分片通过后合并覆盖率，结果显示为 `Python 3.12 / Windows`。
+
+在 **Actions → Windows packaged distributions → Run workflow** 选择 `main` 可构建并验证
+该提交。在已推送的 `v*` 发布标签上手动运行同一工作流可发布版本。打包门禁通过只读 GitHub
+API 核对 `.github/workflows/ci.yml` 的运行记录，要求运行分支为 `main`、事件为
+`workflow_dispatch`、提交 SHA 与打包提交相同，且运行已完成并成功。验证后调用仅接受
+`workflow_call` 的 `.github/workflows/_windows-package.yml`，使用锁定的 Python 3.12.10、
+Node 24.12.0、uv 0.11.8、Inno Setup 6.7.1 和数据库 revision 构建制品。
 
 可复用工作流的 build artifact 同时包含封闭 release 与 `clean-smoke.ps1`；后续 verify job
 使用新的 Windows runner，只执行官方 `download-artifact@v8`，不 checkout 源码、不 setup
 Python/Node，也不继承构建 job 的工作目录或进程。维护者按需选择 Python、npm 或
-GitHub Actions 依赖版本，提交锁文件或工作流变更，并通过 CI 验证。安装器、便携包、SBOM 与 source-free smoke 属于
-显式发布门禁，不在每次 PR 中重复消耗 Windows 分钟；维护者在准备发行时手动运行一次，
-正式 tag 则再次执行同一条关闭式链路。
+GitHub Actions 依赖版本，提交锁文件或工作流变更，并手动运行 CI 验证。
 
 verify 把 PATH 收敛到 Windows System32，核对 manifest/SHA-256/SBOM 后，在中文、
 空格和只读目录运行便携程序，并覆盖二次激活、异常锁恢复、完整出站防火墙隔离、静默
 安装/同版本重装/卸载和数据保留。失败 JSON 仅含绑定哈希、稳定错误码、脱敏阶段以及启动
 毫秒/预算；成功 JSON 同样不含路径、环境、异常、凭据或日志。基础权限仅为 `actions: read`
-与 `contents: read`，前者只用于核验
-精确 CI 证据；只有所有验证通过的 tag 才让独立 job 获得 `contents: write` 并创建 draft
-Release，正式发布继续要求人工确认。
+与 `contents: read`，前者用于核验 CI 证据。在发布标签上手动启动的运行验证成功后，独立
+发布 job 为制品登记 GitHub 构建证明，上传草稿附件，逐一核对文件名和 SHA-256 后发布。
 
 固定 Windows 11 x64、16 GB 验收机仍以默认 `8000 ms` 检查冷启动性能。GitHub hosted
 runner 是 2 vCPU Windows Server，不能冒充目标性能环境；其 source-free smoke 显式使用
@@ -292,7 +291,7 @@ Hosted verify 默认只有当前发行物，因此 `installer_reinstalled=true` 
 
 v2 的前端预算把初始 JavaScript 闭包限制为 `350,000` 字节，并在桌面 `1440×900`、中等 `900×900`、`Pixel 7` 三视口维护 **24 张**人工审阅的视觉基线。Assistant E2E 必须覆盖选区提问、解释、英文到简体中文、相关推荐确认、联网拒绝/同意、刷新恢复和正式报告隔离。
 
-仓库工作流契约要求**全 PR Windows** 质量门与独立 source-free 打包验证；GitHub Actions 额度耗尽期间只做本地与静态验证，不推送、不 rerun，也不把未运行的远端 job 写成成功。最终 v2 收据必须分别记录 Python、前端、Playwright、无障碍、安全审计、依赖锁、制品哈希、SBOM、安装生命周期与明确未验证的外部条件。
+v2 阶段的工作流要求每个 PR 通过 Windows 质量门，另行验证 source-free 打包。该阶段 GitHub Actions 额度耗尽期间仅执行了本地与静态验证。最终 v2 收据分别记录 Python、前端、Playwright、无障碍、安全审计、依赖锁、制品哈希、SBOM、安装生命周期与明确未验证的外部条件。
 
 ### 14.1 封闭安全审计
 

@@ -89,13 +89,13 @@ STABLE_V2_FACTS = {
     "docs/testing-release.md": (
         "350,000",
         "24 张",
-        "全 PR Windows",
+        "云端测试和打包仅由维护者手动启动",
     ),
     "docs/windows-packaging.md": (
         "Windows 11 x64",
         "source-free",
         "未签名",
-        "全 PR Windows",
+        "云端测试和打包仅由维护者手动启动",
     ),
 }
 

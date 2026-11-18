@@ -36,4 +36,7 @@ uv run pytest -n 2 --dist=loadscope -m "not resource_serial" --basetemp=.tmp/p
 uv run pytest -m resource_serial --basetemp=.tmp/s
 ```
 
-发布标签必须指向已经通过 `main` push CI 的同一提交。打包工作流会在生成制品后执行 source-free smoke、manifest 校验、SBOM 校验和 attestation；只有这些步骤全部成功才发布 GitHub Release。
+1. 将候选提交推送到本仓库的 `main`，在 **Actions → CI → Run workflow** 选择 `main`。全部测试通过后，记下该次运行的完整提交 SHA。
+2. 为该 SHA 创建与版本一致的附注标签（本版为 `v3.2.0`）并推送到本仓库。推送分支、更新 PR 或推送标签都不会自动启动测试或打包。
+3. 手动启动标签上的打包工作流。例如，发布本版时运行 `gh workflow run package-windows.yml --repo Lisalsj/folioskiff --ref v3.2.0`。如需只验证构建，可在 **Actions → Windows packaged distributions → Run workflow** 中选择 `main`。
+4. 核对打包记录和 GitHub Release 附件。标签运行先核对同一 SHA 在 `main` 上手动启动的 CI 成功记录，再验证 manifest、SHA-256、SBOM 和 source-free smoke。发布 job 为通过验证的文件登记 GitHub 构建证明，核对草稿附件后发布。

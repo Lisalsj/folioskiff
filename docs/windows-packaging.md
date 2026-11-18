@@ -17,14 +17,13 @@ Sandbox 的唯一发行流程。它是开发和发布文档，不是已发布版
   → 独立验证器关闭式复核
   → 新 Windows runner 下载不可变 artifact
   → 无源码、无 Python/Node/Git 的安装/便携 smoke
-  → v* tag 触发 GitHub 构建证明，校验草稿附件的 SHA-256 后发布
+  → 在 v* 标签上手动运行时，登记 GitHub 构建证明，校验草稿附件的 SHA-256 后发布
 ```
 
-`.github/workflows/package-windows.yml` 只响应手动触发和 `v*` tag。质量、构建与验证分属
-不同 job，并始终按“完整质量门 → 构建 → source-free 验证”执行。验证 job 使用新的
-`windows-latest` runner，只下载上一 job 的 artifact，不 checkout 仓库，也不 setup Python、
-Node.js 或 uv。主 `ci.yml` 仅响应 PR、`main` push 或手动事件，保留全 PR Windows 源码与
-浏览器门禁，但不重复构建安装器；浏览器门禁与后端门禁并行，功能分支也不因 push 与 PR 双跑。
+云端测试和打包仅由维护者手动启动。在本仓库的 **Actions → CI → Run workflow** 选择
+`main`，等待源码与浏览器测试全部通过。需要构建时，在 **Windows packaged distributions**
+中手动选择同一提交的 `main` 分支或发布标签。工作流核对该提交的 CI 记录后开始构建，
+随后在新的 `windows-latest` runner 上下载并验证制品，验证环境无需项目源码、Python、Node.js 或 uv。
 
 构建输入固定为 Python `3.12.10`、Node.js `24.12.0`、uv `0.11.8` 和 Inno Setup
 `6.7.1`。Python 3.12.10 是官方发布 Windows x64 安装包的最后一个 3.12 版本；后续
@@ -50,7 +49,7 @@ runner 可以从 Chocolatey 取得同一版本。
 
 ## 2. 权限与发布边界
 
-日常 CI 验证代码与浏览器交互。标签构建先核对同一提交的 `main` CI 成功记录，再打包并执行独立 Windows smoke。发布 job 使用 `contents: write` 管理草稿，使用 `id-token: write` 与 `attestations: write` 为核验过的文件登记 GitHub 构建证明。流程逐一核对草稿附件的名称和 SHA-256，再发布该版本。重试时会补齐草稿，并复核已经发布的附件。
+打包工作流读取 `ci.yml` 的成功记录，核对提交 SHA、运行分支 `main` 和手动事件 `workflow_dispatch`。分支构建完成后可下载验证过的 artifact。在推送的 `v*` 标签上手动运行时，发布 job 使用 `contents: write` 管理草稿，使用 `id-token: write` 与 `attestations: write` 为核验过的文件登记 GitHub 构建证明。流程逐一核对草稿附件的名称和 SHA-256，再发布该版本。重试时会补齐草稿，并复核已经发布的附件。
 
 v0.8 明确不做 Authenticode。`UNSIGNED.md`、Release notes、能力矩阵和 manifest 必须
 一致显示未签名。SHA-256 只能证明下载字节与清单一致，不能证明发布者身份，也不能建立
@@ -193,7 +192,7 @@ Windows 11、16 GB、无预装 Python/Node/Git 的生命周期与人工安装器
 
 v2 仍只支持 **Windows 11 x64**。安装器和便携 ZIP 必须消费同一份已审计 onedir；验证进程不 checkout 源码、不带 Python/Node/Git，并以 **source-free** 方式验证回环启动、SPA、API、SQLite、单实例、便携运行和安装生命周期。
 
-首版制品保持**未签名**，因此同时发布 SHA-256、CycloneDX SBOM、`UNSIGNED.md` 和未来签名 hook，不能把摘要校验写成发布者身份认证。工作流继续保留**全 PR Windows** 质量门和隔离的打包/验证 job；当前 Actions 配额限制下不触发远端运行，最终收据必须把本地成功与 hosted runner、Sandbox、SmartScreen 等未验证事实分开。
+首版制品保持**未签名**，因此同时发布 SHA-256、CycloneDX SBOM、`UNSIGNED.md` 和未来签名 hook，不能把摘要校验写成发布者身份认证。v2 阶段为每个 PR 配置了 Windows 质量门和隔离的打包/验证 job。该阶段受 Actions 配额限制，只取得本地验证结果。v2 收据单列了 hosted runner、Sandbox、SmartScreen 等未验证项。
 
 ## 9. v2.0.0 本地候选证据
 
